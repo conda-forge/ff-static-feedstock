@@ -2,7 +2,7 @@
 {% set version = "2.0.0" %}
 
 package:
-  name: {{ name }}-static
+  name: {{ name }}
   version: {{ version }}
 
 source:
@@ -15,50 +15,55 @@ source:
       - allow-longer-paths-for-ffopen.patch
 
 build:
-  skip: true  # [win]
-  number: 0
-  script:
-    # FIXME: Patch out custom paths
-    # Note: Need the space at the end of '$PREFIX/share/ff/ ' so that
-    #
-    # fullname = path(1:index(path,' ')-1)//names
-    #
-    # in src/ff/ffinit.f can have a space to split on.
-    # This is a bug and should get fixed by using better logic for fullname.
-    - sed -i "s|/user/gj/lib/|$PREFIX/share/ff/ |g" src/ff/ffinit.f
-    - sed -i "s|/usr/local/ff/|$PREFIX/share/ff/ |g" src/ff/ffinit.f
+  number: 1
 
-    - cd src/ff
-    - make install FC=$FC FFLAGS="$FFLAGS -std=legacy -ffixed-line-length-none" DEST=$PREFIX/lib
-    - mkdir -p $PREFIX/include/ff
-    - mv *.h $PREFIX/include/ff
-    - mkdir -p $PREFIX/share/ff
-    - mv *.dat $PREFIX/share/ff/
+outputs:
+  - name: {{ name }}-static
 
-requirements:
-  build:
-    - {{ stdlib('c') }}
-    - {{ compiler('fortran') }}
-    - make
-    - libtool
-    - sed
+    build:
+      skip: true  # [win or (osx and x86)]
+      script:
+        # FIXME: Patch out custom paths
+        # Note: Need the space at the end of '$PREFIX/share/ff/ ' so that
+        #
+        # fullname = path(1:index(path,' ')-1)//names
+        #
+        # in src/ff/ffinit.f can have a space to split on.
+        # This is a bug and should get fixed by using better logic for fullname.
+        - sed -i "s|/user/gj/lib/|$PREFIX/share/ff/ |g" src/ff/ffinit.f
+        - sed -i "s|/usr/local/ff/|$PREFIX/share/ff/ |g" src/ff/ffinit.f
 
-test:
-  source_files:
-    - src/ff/npointes.f
-  requires:
-    - {{ compiler('fortran') }}
-  commands:
-    - test -f $PREFIX/lib/libff.a
-    - test -f $PREFIX/include/ff/aa.h
-    - test -f $PREFIX/include/ff/ff.h
-    - test -f $PREFIX/include/ff/ffs.h
-    - test -f $PREFIX/share/ff/fferr.dat
-    - test -f $PREFIX/share/ff/ffperm5.dat
-    - test -f $PREFIX/share/ff/ffwarn.dat
+        - cd src/ff
+        - make install FC=$FC FFLAGS="$FFLAGS -std=legacy -ffixed-line-length-none" DEST=$PREFIX/lib
+        - mkdir -p $PREFIX/include/ff
+        - mv *.h $PREFIX/include/ff
+        - mkdir -p $PREFIX/share/ff
+        - mv *.dat $PREFIX/share/ff/
 
-    - $FC ./src/ff/npointes.f -o npointes $FFLAGS -I$PREFIX/include/ff $LDFLAGS -lff
-    - ./npointes
+    requirements:
+      build:
+        - {{ stdlib('c') }}
+        - {{ compiler('fortran') }}
+        - make
+        - libtool
+        - sed
+
+    test:
+      source_files:
+        - src/ff/npointes.f
+      requires:
+        - {{ compiler('fortran') }}
+      commands:
+        - test -f $PREFIX/lib/libff.a
+        - test -f $PREFIX/include/ff/aa.h
+        - test -f $PREFIX/include/ff/ff.h
+        - test -f $PREFIX/include/ff/ffs.h
+        - test -f $PREFIX/share/ff/fferr.dat
+        - test -f $PREFIX/share/ff/ffperm5.dat
+        - test -f $PREFIX/share/ff/ffwarn.dat
+
+        - $FC ./src/ff/npointes.f -o npointes $FFLAGS -I$PREFIX/include/ff $LDFLAGS -lff
+        - ./npointes
 
 about:
   home: https://github.com/hep-packaging-coordination/ff
@@ -76,5 +81,6 @@ about:
   dev_url: https://github.com/hep-packaging-coordination/ff
 
 extra:
+  feedstock-name: ff
   recipe-maintainers:
     - matthewfeickert
