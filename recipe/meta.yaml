@@ -81,6 +81,6 @@ about:
   dev_url: https://github.com/hep-packaging-coordination/ff
 
 extra:
-  feedstock-name: ff
+  feedstock-name: ff-static
   recipe-maintainers:
     - matthewfeickert
